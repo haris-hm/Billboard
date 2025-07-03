@@ -1,6 +1,8 @@
 package com.harismehuljic.billboard.rendering;
 
 import com.harismehuljic.billboard.Billboard;
+import com.harismehuljic.billboard.image.ImagePixel;
+import com.harismehuljic.billboard.image.ProcessedImage;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -15,7 +17,7 @@ public class CanvasBuilder {
     private Vec3d pos;
     private float pixelScale;
     private World world;
-    private int[][] rgbValues;
+    private ImagePixel[][] imagePixels;
 
     public CanvasBuilder setWidth(int width) {
         this.width = width;
@@ -42,23 +44,15 @@ public class CanvasBuilder {
         return this;
     }
 
-    public CanvasBuilder setImage(BufferedImage image) throws IllegalStateException {
+    public CanvasBuilder setImage(ProcessedImage image) throws IllegalStateException {
         if (this.height <= 0 || this.width <= 0) {
             throw new IllegalStateException("Canvas width or height must be defined and greater than 0 before setting the image.");
         }
-
-        BufferedImage resizedImage = resizeImage(image, this.width, this.height);
-        this.rgbValues = new int[this.height][this.width];
-        HashSet<Integer> uniqueColors = new HashSet<>();
-
-        for (int y = 0; y < this.height; y++) {
-            for (int x = 0; x < this.width; x++) {
-                this.rgbValues[y][x] = resizedImage.getRGB(x, y);
-                uniqueColors.add(this.rgbValues[y][x]);
-            }
+        else if (image.getWidth() != this.width || image.getHeight() != this.height) {
+            throw new IllegalArgumentException("Image dimensions must match the canvas dimensions. Image width: " + image.getWidth() + ", height: " + image.getHeight() + ", Canvas width: " + this.width + ", height: " + this.height);
         }
 
-        Billboard.LOGGER.info("Unique colors in the image: {}, Total pixels: {}", uniqueColors.size(), this.width * this.height);
+        this.imagePixels = image.getPixelData();
 
         return this;
     }
@@ -73,12 +67,12 @@ public class CanvasBuilder {
             throw new IllegalStateException("Canvas width or height must be defined and greater than 0 before setting the image.");
         }
 
-        this.rgbValues = new int[this.height][this.width];
+        this.imagePixels = new ImagePixel[this.height][this.width];
 
         int maxColors = 0x1000000; // 16,777,216
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < this.width; x++) {
-                this.rgbValues[y][x] = (int) Math.floor(maxColors * Math.random());
+                this.imagePixels[y][x] = new ImagePixel((int) Math.floor(maxColors * Math.random()));
             }
         }
 
@@ -92,14 +86,9 @@ public class CanvasBuilder {
             this.pos,
             this.pixelScale,
             this.world,
-            this.rgbValues
+            this.imagePixels
         );
     }
 
-    private BufferedImage resizeImage(BufferedImage image, int width, int height) {
-        Image resultingImage = image.getScaledInstance(width, height, Image.SCALE_DEFAULT);
-        BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
-        return outputImage;
-    }
+
 }

@@ -1,4 +1,4 @@
-package com.harismehuljic.billboard.command.util;
+package com.harismehuljic.billboard.image;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

@@ -12,19 +12,19 @@ import net.minecraft.world.World;
 import org.joml.Vector3f;
 
 public class Pixel {
-    private DisplayEntity.TextDisplayEntity pixelEntity;
-    private Vec3d pos;
-    private float scale;
-    private World world;
+    private final DisplayEntity.TextDisplayEntity pixelEntity;
+    private final Vec3d pos;
+    private final World world;
 
     /**
      * Creates a new Pixel instance. A pixelText is a {@link DisplayEntity.TextDisplayEntity}
      * that represents a single pixelText of a larger {@link Canvas} in the Minecraft world.
      * @param pos The position of the pixelText in the world. This usually relates to the positions of all the other pixels
      *            in the canvas and is determined by the canvas's position and pixelText scale.
+     * @param world The Minecraft world where the pixelText will be rendered. This is typically the same world as the canvas it belongs to.
      * @param scale The scale of the pixelText, which determines how large the pixelText appears in the world.
      * @param color The color of the pixelText, represented as an RGB integer.
-     * @param world The Minecraft world where the pixelText will be rendered. This is typically the same world as the canvas it belongs to.
+     * @param length The length of the pixelText.
      *
      * @apiNote A scale of 1.0 is equivalent to 0.2 blocks. A scale of 5 is equivalent to 1 block.
      *
@@ -32,15 +32,26 @@ public class Pixel {
      * @see Canvas
      * @see CanvasBuilder
      */
-    public Pixel(Vec3d pos, float scale, int color, World world) {
+    public Pixel(Vec3d pos, World world, float scale, int color, int length) {
+        this.pos = pos;
+        this.world = world;
+
         this.pixelEntity = new DisplayEntity.TextDisplayEntity(EntityType.TEXT_DISPLAY, world);
         this.pixelEntity.setPosition(pos);
-        this.pixelEntity.setTransformation(new AffineTransformation(null, null, new Vector3f(scale, scale, scale), null));
-        this.updateColor(color);
 
-        this.pos = pos;
-        this.scale = scale;
-        this.world = world;
+        float stretchFactor = scale * length;
+        float offset = Pixel.getOffsetConstant(length, scale);
+
+        this.pixelEntity.setTransformation(
+            new AffineTransformation(
+                new Vector3f(offset, 0.0F, 0.0F),
+                null,
+                new Vector3f(stretchFactor, scale, scale),
+                null
+            )
+        );
+
+        this.updateColor(color);
     }
 
     /**
@@ -49,10 +60,11 @@ public class Pixel {
      *              and the background of the pixelText in the Minecraft world.
      */
     private void updateColor(int color) {
+        int rgb = Math.abs(color);
         MutableText pixelText = Text.literal("█");
         pixelText.setStyle(Style.EMPTY.withColor(TextColor.fromRgb(color)));
 
-        this.pixelEntity.setBackground(color);
+        this.pixelEntity.setBackground(rgb);
         this.pixelEntity.setText(pixelText);
     }
 
@@ -64,12 +76,22 @@ public class Pixel {
     }
 
     /**
-     * Returns the size of a scale 1.0 pixelText in terms of Minecraft blocks.
-     * @return The size of a scale 1.0 pixelText in blocks, which is 0.2F.
+     * Calculates how many blocks a pixel will take up in the world based on its scale.
+     * @param scale The scale of the pixel {@link DisplayEntity.TextDisplayEntity}, which determines how
+     *              large the pixelText appears in the world.
+     * @return The size of the pixel entity in terms of blocks.
      * @apiNote A scale of 1.0 is equivalent to 0.2 blocks. A scale of 5 is equivalent to 1 block.
      */
-    public static float getBlockConstant() {
-        return 0.2F;
+    public static float getPixelBlocks(float scale) {
+        return 0.2F * scale;
+    }
+
+    /**
+     * Returns the offset amount for a pixelText based on its length.
+     * @return The amount of offset for the pixelText, which is calculated as 0.0875F multiplied by the length.
+     */
+    public static float getOffsetConstant(int length, float scale) {
+        return 0.0875F * (length - 1) * scale;
     }
 
     /**
