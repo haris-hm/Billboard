@@ -1,4 +1,4 @@
-package com.harismehuljic.billboard;
+package com.harismehuljic.billboard.util;
 
 import com.harismehuljic.billboard.command.BillboardCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;

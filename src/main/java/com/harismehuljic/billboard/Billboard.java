@@ -1,5 +1,6 @@
 package com.harismehuljic.billboard;
 
+import com.harismehuljic.billboard.util.Registries;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;

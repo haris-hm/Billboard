@@ -1,9 +1,7 @@
 package com.harismehuljic.billboard.command;
 
-import com.harismehuljic.billboard.image.ImageRequester;
-import com.harismehuljic.billboard.image.ProcessedImage;
-import com.harismehuljic.billboard.image.RunLengthEncodedImage;
-import com.harismehuljic.billboard.image.Image;
+import com.harismehuljic.billboard.image.*;
+import com.harismehuljic.billboard.impl.CanvasServer;
 import com.harismehuljic.billboard.rendering.Canvas;
 import com.harismehuljic.billboard.rendering.CanvasBuilder;
 import com.harismehuljic.billboard.rendering.Pixel;
@@ -12,18 +10,22 @@ import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.CommandSource;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 
-import java.awt.image.BufferedImage;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -54,14 +56,35 @@ public class BillboardCommand {
                 .then(literal("image")
                         .then(CommandManager.argument("width", IntegerArgumentType.integer(0))
                                 .then(CommandManager.argument("height", IntegerArgumentType.integer(0))
-                                        .then(CommandManager.argument("scale", FloatArgumentType.floatArg(0.1F))
-                                                .then(CommandManager.argument("url", StringArgumentType.string())
-                                                        .then(CommandManager.argument("imageType", StringArgumentType.greedyString())
+                                        .then(CommandManager.argument("scale", FloatArgumentType.floatArg(0.0000001F))
+                                                .then(CommandManager.argument("imageType", StringArgumentType.string())
+                                                        .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"rle", "raw"}, builder))
+                                                        .then(CommandManager.argument("url", StringArgumentType.greedyString())
                                                                 .executes(BillboardCommand::renderImage)
                                                         )
                                                 )
                                         )
                                 )
+                        )
+                )
+
+                .then(literal("resizedImage")
+                        .then(CommandManager.argument("resizeFactor", FloatArgumentType.floatArg(0.001F))
+                            .then(CommandManager.argument("scale", FloatArgumentType.floatArg(0.0000001F))
+                                    .then(CommandManager.argument("imageType", StringArgumentType.string())
+                                            .suggests((context, builder) -> CommandSource.suggestMatching(new String[]{"rle", "raw"}, builder))
+                                            .then(CommandManager.argument("url", StringArgumentType.greedyString())
+                                                    .executes(BillboardCommand::renderResizedImage)
+                                            )
+                                    )
+                            )
+                        )
+                )
+
+                .then(literal("remove")
+                        .then(CommandManager.argument("uuid", StringArgumentType.greedyString())
+                                .suggests(CANVAS_UUID_PROVIDER)
+                                .executes(BillboardCommand::removeCanvas)
                         )
                 )
         );
@@ -123,14 +146,13 @@ public class BillboardCommand {
                     source.sendError(Text.literal("Failed to load image: " + ex.getMessage()));
                     return null;
                 }
-                BufferedImage resizedImage = resizeImage(image, width, height);
-                ProcessedImage processedImage;
+                ImageTypes type;
                 switch (imageType.toLowerCase()) {
                     case "rle":
-                        processedImage = new RunLengthEncodedImage(resizedImage);
+                        type = ImageTypes.RLE;
                         break;
                     case "raw":
-                        processedImage = new Image(resizedImage);
+                        type = ImageTypes.RAW;
                         break;
                     default:
                         source.sendError(Text.literal("Unsupported image type: " + imageType));
@@ -142,7 +164,7 @@ public class BillboardCommand {
                         .setPixelScale(scale)
                         .setPos(player.getPos())
                         .setWorld(world)
-                        .setImage(processedImage)
+                        .setImage(image, type)
                         .build();
                 canvas.render();
                 return null;
@@ -152,10 +174,71 @@ public class BillboardCommand {
         return 1;
     }
 
-    private static BufferedImage resizeImage(BufferedImage image, int width, int height) {
-        java.awt.Image resultingImage = image.getScaledInstance(width, height, java.awt.Image.SCALE_DEFAULT);
-        BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
-        return outputImage;
+    private static int renderResizedImage(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = context.getSource().getPlayer();
+        World world = Objects.requireNonNull(context.getSource().getWorld());
+
+        final float resizeFactor = FloatArgumentType.getFloat(context, "resizeFactor");
+        final float scale = FloatArgumentType.getFloat(context, "scale");
+        final String url = StringArgumentType.getString(context, "url");
+        final String imageType = StringArgumentType.getString(context, "imageType");
+
+        assert player != null;
+
+        ImageRequester.getImage(url).orTimeout(60, TimeUnit.SECONDS).handleAsync((image, ex) -> {
+            CompletableFuture.supplyAsync(() -> {
+                if (ex != null) {
+                    source.sendError(Text.literal("Failed to load image: " + ex.getMessage()));
+                    return null;
+                }
+                ImageTypes type;
+                switch (imageType.toLowerCase()) {
+                    case "rle":
+                        type = ImageTypes.RLE;
+                        break;
+                    case "raw":
+                        type = ImageTypes.RAW;
+                        break;
+                    default:
+                        source.sendError(Text.literal("Unsupported image type: " + imageType));
+                        return null;
+                }
+                Canvas canvas = new CanvasBuilder()
+                        .setPixelScale(scale)
+                        .setWidth(image.getWidth())
+                        .setHeight(image.getHeight())
+                        .setPos(player.getPos())
+                        .setWorld(world)
+                        .setImage(image, type, resizeFactor)
+                        .build();
+                canvas.render();
+                return null;
+            }, source.getServer());
+            return 0;
+        }, source.getServer());
+        return 1;
     }
+
+    private static int removeCanvas(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
+        CanvasServer canvasServer = (CanvasServer) server;
+
+        String uuidString = StringArgumentType.getString(context, "uuid");
+
+        if (canvasServer.billboard$getCanvasManager().removeCanvas(uuidString)) {
+            source.sendFeedback(() -> Text.literal("Canvas with UUID " + uuidString + " has been removed.").formatted(Formatting.GREEN), false);
+        } else {
+            source.sendError(Text.literal("No canvas found with UUID: " + uuidString).formatted(Formatting.RED));
+        }
+        return 1;
+    }
+
+    private static final SuggestionProvider<ServerCommandSource> CANVAS_UUID_PROVIDER = (source, builder) -> {
+        MinecraftServer server = source.getSource().getServer();
+        CanvasServer canvasServer = (CanvasServer) server;
+
+        return CommandSource.suggestMatching(canvasServer.billboard$getCanvasManager().getCanvasUUIDs(), builder);
+    };
 }

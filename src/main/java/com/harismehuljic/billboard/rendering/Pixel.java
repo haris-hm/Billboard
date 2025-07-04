@@ -1,5 +1,6 @@
 package com.harismehuljic.billboard.rendering;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.text.MutableText;
@@ -75,6 +76,10 @@ public class Pixel {
         this.world.spawnEntity(this.pixelEntity);
     }
 
+    public void destroy() {
+        this.pixelEntity.remove(Entity.RemovalReason.DISCARDED);
+    }
+
     /**
      * Calculates how many blocks a pixel will take up in the world based on its scale.
      * @param scale The scale of the pixel {@link DisplayEntity.TextDisplayEntity}, which determines how
@@ -100,5 +105,9 @@ public class Pixel {
      */
     public Vec3d getPos() {
         return this.pos;
+    }
+
+    public String getUUID() {
+        return this.pixelEntity.getUuidAsString();
     }
 }

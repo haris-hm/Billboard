@@ -1,17 +1,27 @@
 package com.harismehuljic.billboard.rendering;
 
 import com.harismehuljic.billboard.image.ImagePixel;
+import com.harismehuljic.billboard.impl.CanvasServer;
+import com.harismehuljic.billboard.util.Serializer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-public class Canvas {
-    private final int width;
-    private final int height;
-    private final Vec3d pos;
-    private final float pixelScale;
-    private final World world;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.UUID;
 
-    private final Pixel[][] worldImagePixels;
+public class Canvas {
+    private final String canvasUUID = UUID.randomUUID().toString();
+    private final int height;
+    private final int width;
+    private final float pixelScale;
+
+    transient private final Vec3d pos;
+    transient final World world;
+
+    transient private final Pixel[][] worldImagePixels;
+    private final ArrayList<String> pixelUUIDs = new ArrayList<>();
 
     /**
      * Creates a new Canvas instance.
@@ -31,18 +41,29 @@ public class Canvas {
         this.worldImagePixels = new Pixel[this.height][this.width];
 
         this.definePixels(imagePixels);
+
+        MinecraftServer server = this.world.getServer();
+        assert server != null;
+
+        CanvasServer canvasServer = (CanvasServer) server;
+        canvasServer.billboard$getCanvasManager().addCanvas(this.canvasUUID, this);
+
+        Path savePath = Serializer.getSavePath(server).resolve("canvas");
+        Serializer.serialize(this, savePath, this.canvasUUID);
     }
 
     private void definePixels(ImagePixel[][] pixels) {
         Vec3d pos = new Vec3d(this.pos.getX(), this.pos.getY(), this.pos.getZ());
         float coordStep = Pixel.getPixelBlocks(this.pixelScale);
 
-        for (int y = 0; y < pixels.length; y++) {
+        for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < pixels[y].length; x++) {
                 int rgbValue = pixels[y][x].getRGB();
                 int pixelLength = pixels[y][x].getLength();
 
-                this.worldImagePixels[y][x] = new Pixel(pos, this.world, this.pixelScale, rgbValue, pixelLength);
+                Pixel pixel = new Pixel(pos, this.world, this.pixelScale, rgbValue, pixelLength);
+                this.worldImagePixels[y][x] = pixel;
+                this.pixelUUIDs.add(pixel.getUUID());
 
                 pos = pos.add(coordStep*pixelLength, 0, 0);
             }
@@ -57,6 +78,16 @@ public class Canvas {
                     continue;
                 }
                 pixel.render();
+            }
+        }
+    }
+
+    public void destroy() {
+        for (Pixel[] row : this.worldImagePixels) {
+            for (Pixel pixel : row) {
+                if (pixel != null) {
+                    pixel.destroy();
+                }
             }
         }
     }
