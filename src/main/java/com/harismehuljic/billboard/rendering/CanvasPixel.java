@@ -69,6 +69,12 @@ public class CanvasPixel {
         this.pixelEntity.setText(pixelText);
     }
 
+    /**
+     * Sets the length of the pixelText, which determines how many blocks it will occupy in the world.
+     * @param length The length of the pixelText, which is the number of blocks it will stretch across.
+     *
+     * @implNote This method also updates the transformation of the pixelText entity to reflect the new length.
+     */
     public void setLength(int length) {
         this.length = length;
         float stretchFactor = this.scale * length;
@@ -84,6 +90,10 @@ public class CanvasPixel {
         );
     }
 
+    /**
+     * Returns the length of the pixelText, which is the number of blocks it occupies in the world.
+     * @return The length of the pixelText.
+     */
     public int getLength() {
         return this.length;
     }
