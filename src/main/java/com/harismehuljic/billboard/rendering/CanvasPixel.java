@@ -12,10 +12,13 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.joml.Vector3f;
 
-public class Pixel {
+public class CanvasPixel {
     private final DisplayEntity.TextDisplayEntity pixelEntity;
     private final Vec3d pos;
     private final World world;
+    private final float scale;
+
+    private int length = 1;
 
     /**
      * Creates a new Pixel instance. A pixelText is a {@link DisplayEntity.TextDisplayEntity}
@@ -25,7 +28,6 @@ public class Pixel {
      * @param world The Minecraft world where the pixelText will be rendered. This is typically the same world as the canvas it belongs to.
      * @param scale The scale of the pixelText, which determines how large the pixelText appears in the world.
      * @param color The color of the pixelText, represented as an RGB integer.
-     * @param length The length of the pixelText.
      *
      * @apiNote A scale of 1.0 is equivalent to 0.2 blocks. A scale of 5 is equivalent to 1 block.
      *
@@ -33,21 +35,19 @@ public class Pixel {
      * @see Canvas
      * @see CanvasBuilder
      */
-    public Pixel(Vec3d pos, World world, float scale, int color, int length) {
+    public CanvasPixel(Vec3d pos, World world, float scale, int color) {
         this.pos = pos;
         this.world = world;
+        this.scale = scale;
 
         this.pixelEntity = new DisplayEntity.TextDisplayEntity(EntityType.TEXT_DISPLAY, world);
         this.pixelEntity.setPosition(pos);
 
-        float stretchFactor = scale * length;
-        float offset = Pixel.getOffsetConstant(length, scale);
-
         this.pixelEntity.setTransformation(
             new AffineTransformation(
-                new Vector3f(offset, 0.0F, 0.0F),
+                new Vector3f(0.0F, 0.0F, 0.0F),
                 null,
-                new Vector3f(stretchFactor, scale, scale),
+                new Vector3f(scale, scale, scale),
                 null
             )
         );
@@ -69,13 +69,35 @@ public class Pixel {
         this.pixelEntity.setText(pixelText);
     }
 
+    public void setLength(int length) {
+        this.length = length;
+        float stretchFactor = this.scale * length;
+        float offset = CanvasPixel.getOffsetConstant(length, scale);
+
+        this.pixelEntity.setTransformation(
+            new AffineTransformation(
+                new Vector3f(offset, 0.0F, 0.0F),
+                null,
+                new Vector3f(stretchFactor, scale, scale),
+                null
+            )
+        );
+    }
+
+    public int getLength() {
+        return this.length;
+    }
+
     /**
-     * Renders the pixelText in the Minecraft world.
+     * Spawns the {@link DisplayEntity.TextDisplayEntity} linked to this pixel into the Minecraft world.
      */
     public void render() {
         this.world.spawnEntity(this.pixelEntity);
     }
 
+    /**
+     * Destroys the {@link DisplayEntity.TextDisplayEntity} linked to this pixel, removing it from the Minecraft world.
+     */
     public void destroy() {
         this.pixelEntity.remove(Entity.RemovalReason.DISCARDED);
     }
@@ -107,6 +129,10 @@ public class Pixel {
         return this.pos;
     }
 
+    /**
+     * Returns the UUID of the pixelText entity.
+     * @return The UUID of the pixelText entity as a String.
+     */
     public String getUUID() {
         return this.pixelEntity.getUuidAsString();
     }

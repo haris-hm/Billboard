@@ -1,7 +1,9 @@
 package com.harismehuljic.billboard.rendering;
 
-import com.harismehuljic.billboard.image.ImagePixel;
+import com.harismehuljic.billboard.preprocessing.Image;
+import com.harismehuljic.billboard.preprocessing.data.ImagePixel;
 import com.harismehuljic.billboard.impl.CanvasServer;
+import com.harismehuljic.billboard.preprocessing.data.PixelConnections;
 import com.harismehuljic.billboard.util.Serializer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.Vec3d;
@@ -20,7 +22,7 @@ public class Canvas {
     transient private final Vec3d pos;
     transient final World world;
 
-    transient private final Pixel[][] worldImagePixels;
+    transient private final CanvasPixel[][] worldImageCanvasPixels;
     private final ArrayList<String> pixelUUIDs = new ArrayList<>();
 
     /**
@@ -28,19 +30,19 @@ public class Canvas {
      * @param width The width of the canvas in terms of pixels.
      * @param height The height of the canvas in terms of pixels.
      * @param pos The position of the top-left corner of the canvas in the world.
-     * @param pixelScale The scale of each pixel in the canvas, determining how large each pixel appears in the world.
+     * @param pixelScale The scale of each canvasPixel in the canvas, determining how large each canvasPixel appears in the world.
      * @param world The Minecraft world where the canvas will be rendered.
      */
-    public Canvas(int width, int height, Vec3d pos, float pixelScale, World world, ImagePixel[][] imagePixels) throws IllegalArgumentException {
+    public Canvas(int width, int height, Vec3d pos, float pixelScale, World world, Image image) throws IllegalArgumentException {
         this.width = width;
         this.height = height;
         this.pos = pos;
         this.pixelScale = pixelScale;
         this.world = world;
 
-        this.worldImagePixels = new Pixel[this.height][this.width];
+        this.worldImageCanvasPixels = new CanvasPixel[this.height][this.width];
 
-        this.definePixels(imagePixels);
+        this.definePixels(image);
 
         MinecraftServer server = this.world.getServer();
         assert server != null;
@@ -52,41 +54,68 @@ public class Canvas {
         Serializer.serialize(this, savePath, this.canvasUUID);
     }
 
-    private void definePixels(ImagePixel[][] pixels) {
+    /**
+     * Defines the pixels of the canvas based on the provided image.
+     * @param image The image to be rendered on the canvas.
+     */
+    private void definePixels(Image image) {
         Vec3d pos = new Vec3d(this.pos.getX(), this.pos.getY(), this.pos.getZ());
-        float coordStep = Pixel.getPixelBlocks(this.pixelScale);
+        float coordStep = CanvasPixel.getPixelBlocks(this.pixelScale);
 
         for (int y = 0; y < this.height; y++) {
-            for (int x = 0; x < pixels[y].length; x++) {
-                int rgbValue = pixels[y][x].getRGB();
-                int pixelLength = pixels[y][x].getLength();
+            for (int x = 0; x < image.getRowPixelCount(y); x++) {
+                ImagePixel imagePixel = image.getPixel(x, y);
+                int rgb = imagePixel.getRGB();
 
-                Pixel pixel = new Pixel(pos, this.world, this.pixelScale, rgbValue, pixelLength);
-                this.worldImagePixels[y][x] = pixel;
-                this.pixelUUIDs.add(pixel.getUUID());
+                if (imagePixel.getPixelConnections().isConnected(PixelConnections.ConnectionDirection.LEFT)) {
+                    this.handleConnectedPixels(imagePixel, x, y);
+                }
+                else {
+                    CanvasPixel canvasPixel = new CanvasPixel(pos, this.world, this.pixelScale, rgb);
+                    this.worldImageCanvasPixels[y][x] = canvasPixel;
+                    this.pixelUUIDs.add(canvasPixel.getUUID());
+                }
 
-                pos = pos.add(coordStep*pixelLength, 0, 0);
+                pos = pos.add(coordStep, 0, 0);
             }
             pos = new Vec3d(this.pos.getX(), pos.getY() - coordStep, pos.getZ());
         }
     }
 
+    private void handleConnectedPixels(ImagePixel imagePixel, int x, int y) {
+        //TODO: Handle different types of connections other than LEFT
+        CanvasPixel canvasPixel = this.worldImageCanvasPixels[y][x-1];
+        canvasPixel.setLength(canvasPixel.getLength() + 1);
+        this.worldImageCanvasPixels[y][x] = canvasPixel;
+    }
+
+    /**
+     * Renders the canvas in the Minecraft world.
+     *
+     * @see CanvasPixel#render()
+     */
     public void render() {
         for (int y = 0; y < this.height; y++) {
-            for (Pixel pixel : this.worldImagePixels[y]) {
-                if (pixel == null) {
+            for (CanvasPixel canvasPixel : this.worldImageCanvasPixels[y]) {
+                if (canvasPixel == null) {
                     continue;
                 }
-                pixel.render();
+                canvasPixel.render();
             }
         }
     }
 
+
+    /**
+     * Destroys all the canvas pixels linked to this canvas from the world.
+     *
+     * @see CanvasPixel#destroy()
+     */
     public void destroy() {
-        for (Pixel[] row : this.worldImagePixels) {
-            for (Pixel pixel : row) {
-                if (pixel != null) {
-                    pixel.destroy();
+        for (CanvasPixel[] row : this.worldImageCanvasPixels) {
+            for (CanvasPixel canvasPixel : row) {
+                if (canvasPixel != null) {
+                    canvasPixel.destroy();
                 }
             }
         }

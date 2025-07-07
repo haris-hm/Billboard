@@ -1,10 +1,11 @@
 package com.harismehuljic.billboard.command;
 
-import com.harismehuljic.billboard.image.*;
 import com.harismehuljic.billboard.impl.CanvasServer;
+import com.harismehuljic.billboard.preprocessing.data.ImageTypes;
+import com.harismehuljic.billboard.preprocessing.util.ImageRequester;
 import com.harismehuljic.billboard.rendering.Canvas;
 import com.harismehuljic.billboard.rendering.CanvasBuilder;
-import com.harismehuljic.billboard.rendering.Pixel;
+import com.harismehuljic.billboard.rendering.CanvasPixel;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -25,7 +26,6 @@ import net.minecraft.world.World;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
@@ -99,8 +99,8 @@ public class BillboardCommand {
         final int color = Integer.parseInt(arg, 16); // Convert hex string to int
 
         assert player != null;
-        Pixel pixel = new Pixel(player.getPos(), world, scale, color, length);
-        pixel.render();
+        CanvasPixel canvasPixel = new CanvasPixel(player.getPos(), world, scale, color);
+        canvasPixel.render();
         return 0;
     }
 

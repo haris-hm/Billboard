@@ -1,4 +1,4 @@
-package com.harismehuljic.billboard.image;
+package com.harismehuljic.billboard.preprocessing.data;
 
 public enum ImageTypes {
     RAW("raw"),

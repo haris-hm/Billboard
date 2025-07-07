@@ -1,6 +1,7 @@
 package com.harismehuljic.billboard.rendering;
 
-import com.harismehuljic.billboard.image.*;
+import com.harismehuljic.billboard.preprocessing.*;
+import com.harismehuljic.billboard.preprocessing.data.ImageTypes;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -12,7 +13,7 @@ public class CanvasBuilder {
     private Vec3d pos;
     private float pixelScale;
     private World world;
-    private ImagePixel[][] imagePixels;
+    private Image image;
 
     /**
      * Creates a new CanvasBuilder instance with default values.
@@ -28,7 +29,7 @@ public class CanvasBuilder {
         this.pos = new Vec3d(0, 0, 0);
         this.pixelScale = 1.0f;
         this.world = null;
-        this.imagePixels = null;
+        this.image = null;
     }
 
     /**
@@ -67,7 +68,7 @@ public class CanvasBuilder {
      * @return This builder instance for method chaining.
      * @throws IllegalArgumentException If the pixel scale is less than or equal to 0.
      *
-     * @see Pixel
+     * @see CanvasPixel
      */
     public CanvasBuilder setPixelScale(float pixelScale) throws IllegalArgumentException {
         if (pixelScale <= 0) {
@@ -100,32 +101,32 @@ public class CanvasBuilder {
 
     /**
      * Sets the image to be rendered on the canvas.
-     * @param image The image to render on the canvas, provided as a ProcessedImage.
+     * @param image The image to render on the canvas, provided as an {@link Image}.
      * @return This builder instance for method chaining.
      * @throws IllegalStateException If the height and width have not been properly set before defining the image to render.
      * @throws IllegalArgumentException If the dimensions of the provided image do not match the defined dimensions of the canvas.
      *
      * @implNote The image must match the dimensions of the canvas.
      *
-     * @see ProcessedImage
+     * @see Image
      */
-    public CanvasBuilder setImage(ProcessedImage image) throws IllegalStateException {
+    public CanvasBuilder setImage(Image image) throws IllegalStateException {
         if (this.height <= 0 || this.width <= 0) {
             throw new IllegalStateException("Canvas width or height must be defined and greater than 0 before setting the image.");
         }
         else if (image.getWidth() != this.width || image.getHeight() != this.height) {
             throw new IllegalArgumentException(String.format("Image dimensions do not match canvas dimensions. Expected: %dx%d, but got: %dx%d",
-                    this.width, this.height, this.imagePixels[0].length, this.imagePixels.length));
+                    this.width, this.height, this.image.getWidth(), this.image.getHeight()));
         }
 
-        this.imagePixels = image.getPixelData();
+        this.image = image;
 
         return this;
     }
 
     /**
      * Defines the image to be rendered on the canvas.
-     * @param image The image to render on the canvas, provided as a BufferedImage.
+     * @param image The image to render on the canvas, provided as an {@link Image}.
      * @param type The type of image processing to apply. This should be an instance of {@link ImageTypes} enum.
      * @return This builder instance for method chaining.
      * @throws IllegalStateException If the height and width have not been properly set before defining the image to render.
@@ -134,7 +135,7 @@ public class CanvasBuilder {
      * the image will be resized to fit the canvas dimensions.
      *
      * @see ImageTypes
-     * @see ProcessedImage
+     * @see Image
      */
     public CanvasBuilder setImage(BufferedImage image, ImageTypes type) throws IllegalStateException {
         if (this.height <= 0 || this.width <= 0) {
@@ -142,9 +143,9 @@ public class CanvasBuilder {
         }
 
         BufferedImage resizedImage = resizeImage(image, this.width, this.height);
-        ProcessedImage processedImage = switch (type) {
+        Image processedImage = switch (type) {
             case RLE -> new RunLengthEncodedImage(resizedImage);
-            case RAW -> new Image(resizedImage);
+            case RAW -> new RawImage(resizedImage);
         };
 
         return setImage(processedImage);
@@ -184,15 +185,16 @@ public class CanvasBuilder {
             throw new IllegalStateException("Canvas width or height must be defined and greater than 0 before setting the image.");
         }
 
-        this.imagePixels = new ImagePixel[this.height][this.width];
+        BufferedImage randomImage = new BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB);
 
         int maxColors = 0x1000000; // 16,777,216
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < this.width; x++) {
-                this.imagePixels[y][x] = new ImagePixel((int) Math.floor(maxColors * Math.random()));
+                randomImage.setRGB(x, y, (int) Math.floor(maxColors * Math.random()));
             }
         }
 
+        this.image = new RawImage(randomImage);
         return this;
     }
 
@@ -211,7 +213,7 @@ public class CanvasBuilder {
             throw new IllegalStateException("World must be set before building the canvas.");
         }
 
-        if (this.imagePixels == null) {
+        if (this.image == null) {
             throw new IllegalStateException("The image must be set before building the canvas.");
         }
 
@@ -221,7 +223,7 @@ public class CanvasBuilder {
             this.pos,
             this.pixelScale,
             this.world,
-            this.imagePixels
+            this.image
         );
     }
 
