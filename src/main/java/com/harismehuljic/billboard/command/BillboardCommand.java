@@ -29,6 +29,12 @@ import java.util.concurrent.TimeUnit;
 
 import static net.minecraft.server.command.CommandManager.literal;
 
+/**
+ * Command class for rendering billboards in Minecraft.
+ * This class handles the registration and execution of commands related to rendering pixel art, canvases, and images.
+ *
+ * @implNote This class is meant solely for testing purposes and will not be included in the releases of the public API.
+ */
 public class BillboardCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess,
                                 CommandManager.RegistrationEnvironment environment) {

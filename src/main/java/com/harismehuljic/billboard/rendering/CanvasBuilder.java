@@ -142,10 +142,9 @@ public class CanvasBuilder {
             throw new IllegalStateException("Canvas width or height must be defined and greater than 0 before setting the image.");
         }
 
-        BufferedImage resizedImage = resizeImage(image, this.width, this.height);
         Image processedImage = switch (type) {
-            case RLE -> new RunLengthEncodedImage(resizedImage);
-            case RAW -> new RawImage(resizedImage);
+            case RLE -> new RunLengthEncodedImage(image, width, height);
+            case RAW -> new RawImage(image, width, height);
         };
 
         return setImage(processedImage);
@@ -225,19 +224,5 @@ public class CanvasBuilder {
             this.world,
             this.image
         );
-    }
-
-    /**
-     * Resizes the given image to the specified width and height.
-     * @param image The image to resize, provided as a BufferedImage.
-     * @param width The desired width of the resized image.
-     * @param height The desired height of the resized image.
-     * @return A new BufferedImage instance containing the resized image.
-     */
-    private static BufferedImage resizeImage(BufferedImage image, int width, int height) {
-        java.awt.Image resultingImage = image.getScaledInstance(width, height, java.awt.Image.SCALE_DEFAULT);
-        BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
-        return outputImage;
     }
 }
