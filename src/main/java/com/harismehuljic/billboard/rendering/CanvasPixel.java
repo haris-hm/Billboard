@@ -1,5 +1,6 @@
 package com.harismehuljic.billboard.rendering;
 
+import com.harismehuljic.billboard.preprocessing.data.Color;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.DisplayEntity;
@@ -12,6 +13,9 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.joml.Vector3f;
 
+/**
+ * Represents a single pixel in a Minecraft world, rendered as a {@link DisplayEntity.TextDisplayEntity}.
+ */
 public class CanvasPixel {
     private final DisplayEntity.TextDisplayEntity pixelEntity;
     private final Vec3d pos;
@@ -23,6 +27,7 @@ public class CanvasPixel {
     /**
      * Creates a new Pixel instance. A pixelText is a {@link DisplayEntity.TextDisplayEntity}
      * that represents a single pixelText of a larger {@link Canvas} in the Minecraft world.
+     *
      * @param pos The position of the pixelText in the world. This usually relates to the positions of all the other pixels
      *            in the canvas and is determined by the canvas's position and pixelText scale.
      * @param world The Minecraft world where the pixelText will be rendered. This is typically the same world as the canvas it belongs to.
@@ -35,7 +40,7 @@ public class CanvasPixel {
      * @see Canvas
      * @see CanvasBuilder
      */
-    public CanvasPixel(Vec3d pos, World world, float scale, int color) {
+    public CanvasPixel(Vec3d pos, World world, float scale, Color color) {
         this.pos = pos;
         this.world = world;
         this.scale = scale;
@@ -57,10 +62,11 @@ public class CanvasPixel {
 
     /**
      * Updates the color of the pixel
-     * @param color The color of the pixelText, represented as an RGB integer. This defines the color of the text
-     *              and the background of the pixelText in the Minecraft world.
+     *
+     * @param color The color of the pixelText, represented as a {@link Color} integer. This defines the color
+     *              of the text and the background of the pixelText in the Minecraft world.
      */
-    private void updateColor(int color) {
+    private void updateColor(Color color) {
         int rgb = Math.abs(color);
         MutableText pixelText = Text.literal("█");
         pixelText.setStyle(Style.EMPTY.withColor(TextColor.fromRgb(color)));
@@ -71,6 +77,7 @@ public class CanvasPixel {
 
     /**
      * Sets the length of the pixelText, which determines how many blocks it will occupy in the world.
+     *
      * @param length The length of the pixelText, which is the number of blocks it will stretch across.
      *
      * @implNote This method also updates the transformation of the pixelText entity to reflect the new length.
@@ -92,6 +99,7 @@ public class CanvasPixel {
 
     /**
      * Returns the length of the pixelText, which is the number of blocks it occupies in the world.
+     *
      * @return The length of the pixelText.
      */
     public int getLength() {
@@ -114,6 +122,7 @@ public class CanvasPixel {
 
     /**
      * Calculates how many blocks a pixel will take up in the world based on its scale.
+     *
      * @param scale The scale of the pixel {@link DisplayEntity.TextDisplayEntity}, which determines how
      *              large the pixelText appears in the world.
      * @return The size of the pixel entity in terms of blocks.
@@ -125,6 +134,7 @@ public class CanvasPixel {
 
     /**
      * Returns the offset amount for a pixelText based on its length.
+     *
      * @return The amount of offset for the pixelText, which is calculated as 0.0875F multiplied by the length.
      */
     public static float getOffsetConstant(int length, float scale) {
@@ -133,6 +143,7 @@ public class CanvasPixel {
 
     /**
      * Returns the position of the pixelText.
+     *
      * @return A {@link Vec3d} containing the (X, Y, Z) coordinates of the pixelText
      */
     public Vec3d getPos() {
@@ -141,6 +152,7 @@ public class CanvasPixel {
 
     /**
      * Returns the UUID of the pixelText entity.
+     *
      * @return The UUID of the pixelText entity as a String.
      */
     public String getUUID() {

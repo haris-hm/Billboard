@@ -7,6 +7,15 @@ import net.minecraft.world.World;
 
 import java.awt.image.BufferedImage;
 
+/**
+ * A builder class for creating instances of the {@link Canvas} class.
+ *
+ * <p>This builder allows for setting various properties of the canvas such as width, height, position, pixel scale,
+ * world, and image to be rendered on the canvas.</p>
+ *
+ * @implNote The builder provides a fluent interface for setting properties and building the canvas instance.
+ * It ensures that all necessary properties are set before the canvas can be built.
+ */
 public class CanvasBuilder {
     private int width;
     private int height;
@@ -17,8 +26,8 @@ public class CanvasBuilder {
 
     /**
      * Creates a new CanvasBuilder instance with default values.
-     * The default width and height are set to 128 pixels, the position is set to (0, 0, 0),
-     * the pixel scale is set to 1.0f.
+     * <p>The default width and height are set to 128 pixels, the position is set to (0, 0, 0),
+     * the pixel scale is set to 1.0f.</p>
      *
      * @apiNote At least the world and image need to be set before building the canvas. All other properties can use the
      * default assigned values.

@@ -2,6 +2,7 @@ package com.harismehuljic.billboard.command;
 
 import com.harismehuljic.billboard.impl.CanvasServer;
 import com.harismehuljic.billboard.preprocessing.RawImage;
+import com.harismehuljic.billboard.preprocessing.data.Color;
 import com.harismehuljic.billboard.preprocessing.data.ImageTypes;
 import com.harismehuljic.billboard.preprocessing.filter.ColorQuantizationMedianCutFilter;
 import com.harismehuljic.billboard.preprocessing.util.ImageRequester;
@@ -115,7 +116,7 @@ public class BillboardCommand {
         final int color = Integer.parseInt(arg, 16); // Convert hex string to int
 
         assert player != null;
-        CanvasPixel canvasPixel = new CanvasPixel(player.getPos(), world, scale, color);
+        CanvasPixel canvasPixel = new CanvasPixel(player.getPos(), world, scale, new Color(color));
         canvasPixel.render();
         return 0;
     }

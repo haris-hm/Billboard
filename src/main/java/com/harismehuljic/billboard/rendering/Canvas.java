@@ -1,6 +1,7 @@
 package com.harismehuljic.billboard.rendering;
 
 import com.harismehuljic.billboard.preprocessing.Image;
+import com.harismehuljic.billboard.preprocessing.data.Color;
 import com.harismehuljic.billboard.preprocessing.data.ImagePixel;
 import com.harismehuljic.billboard.impl.CanvasServer;
 import com.harismehuljic.billboard.preprocessing.data.PixelConnections;
@@ -13,6 +14,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.UUID;
 
+/**
+ * Represents a canvas in the Minecraft world that can render an image using {@link CanvasPixel}s.
+ * Each pixel in the canvas is represented by a {@link CanvasPixel}, which is rendered as a block in the world.
+ *
+ * @implNote The canvas is defined by its width, height, position in the world, and pixel scale.
+ * The canvas pixels are created based on the provided image and rendered in the world.
+ */
 public class Canvas {
     private final String canvasUUID = UUID.randomUUID().toString();
     private final int height;
@@ -71,7 +79,7 @@ public class Canvas {
                     this.handleConnectedPixels(imagePixel, x, y);
                 }
                 else {
-                    CanvasPixel canvasPixel = new CanvasPixel(pos, this.world, this.pixelScale, rgb);
+                    CanvasPixel canvasPixel = new CanvasPixel(pos, this.world, this.pixelScale, new Color(rgb));
                     this.worldImageCanvasPixels[y][x] = canvasPixel;
                     this.pixelUUIDs.add(canvasPixel.getUUID());
                 }
