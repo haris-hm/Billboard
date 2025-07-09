@@ -4,8 +4,17 @@ package com.harismehuljic.billboard.preprocessing.data;
  * Represents a pixel in an image with its RGB value and connections to neighboring pixels.
  */
 public class ImagePixel {
-    private final int rgb;
+    private final Color color;
     private PixelConnections pixelConnections = new PixelConnections();
+
+    /**
+     * Constructs an ImagePixel with the specified {@link Color} object.
+     *
+     * @param color The {@link Color} object representing the pixel's color.
+     */
+    public ImagePixel(Color color) {
+        this.color = color;
+    }
 
     /**
      * Constructs an ImagePixel with the specified RGB value.
@@ -13,7 +22,7 @@ public class ImagePixel {
      * @param rgb The RGB value of the pixel.
      */
     public ImagePixel(int rgb) {
-        this.rgb = rgb;
+        this.color = new Color(rgb);
     }
 
     /**
@@ -24,20 +33,20 @@ public class ImagePixel {
      * @param blue  The blue channel value (0-255).
      */
     public ImagePixel(int red, int green, int blue) {
-        this.rgb = (red << 16) | (green << 8) | blue;
+        this.color = new Color(red, green, blue);
     }
 
     /**
-     * Constructs an ImagePixel with the specified RGB value and pixel connections.
+     * Constructs an ImagePixel with the specified color and pixel connections.
      *
-     * @param rgb               The RGB value of the pixel.
+     * @param color             The RGB value of the pixel.
      * @param pixelConnections  The connections to neighboring pixels.
      *
      * @apiNote This should not be used to construct an instance of {@link ImagePixel} directly, this is used by the
      * {@link ImagePixel#copy()} method to create a copy of the pixel with its connections.
      */
-    private ImagePixel(int rgb, PixelConnections pixelConnections) {
-        this.rgb = rgb;
+    private ImagePixel(Color color, PixelConnections pixelConnections) {
+        this.color = color;
         this.pixelConnections = pixelConnections;
     }
 
@@ -46,35 +55,8 @@ public class ImagePixel {
      *
      * @return The RGB value of the pixel as an integer.
      */
-    public int getRGB() {
-        return rgb;
-    }
-
-    /**
-     * Returns the red channel value of the pixel.
-     *
-     * @return The red channel value (0-255).
-     */
-    public int getRedChannel() {
-        return (rgb >> 16) & 0xFF;
-    }
-
-    /**
-     * Returns the green channel value of the pixel.
-     *
-     * @return The green channel value (0-255).
-     */
-    public int getGreenChannel() {
-        return (rgb >> 8) & 0xFF;
-    }
-
-    /**
-     * Returns the blue channel value of the pixel.
-     *
-     * @return The blue channel value (0-255).
-     */
-    public int getBlueChannel() {
-        return rgb & 0xFF;
+    public Color getColor() {
+        return this.color;
     }
 
     /**
@@ -89,11 +71,11 @@ public class ImagePixel {
     }
 
     /**
-     * Creates a copy of this ImagePixel with the same RGB value and pixel connections.
+     * Creates a copy of this ImagePixel with the same color value and pixel connections.
      *
-     * @return A new ImagePixel instance with the same RGB value and pixel connections.
+     * @return A new ImagePixel instance with the same color value and pixel connections.
      */
     public ImagePixel copy() {
-        return new ImagePixel(this.rgb, this.pixelConnections);
+        return new ImagePixel(this.color, this.pixelConnections);
     }
 }

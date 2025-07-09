@@ -50,7 +50,7 @@ public class RunLengthEncodedImage extends Image {
                 int pixelColor = image.getRGB(x, y);
                 ImagePixel currentPixel = new ImagePixel(pixelColor);
 
-                if (x > 0 && pixelColor == lastPixel.getRGB()) {
+                if (x > 0 && pixelColor == lastPixel.getColor().getRGB()) {
                     PixelConnections lastPixelConnections = lastPixel.getPixelConnections();
                     PixelConnections currentPixelConnections = currentPixel.getPixelConnections();
 

@@ -65,7 +65,7 @@ public class Canvas {
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < image.getRowPixelCount(y); x++) {
                 ImagePixel imagePixel = image.getPixel(x, y);
-                int rgb = imagePixel.getRGB();
+                int rgb = imagePixel.getColor().getRGB();
 
                 if (imagePixel.getPixelConnections().isConnected(PixelConnections.ConnectionDirection.LEFT)) {
                     this.handleConnectedPixels(imagePixel, x, y);
