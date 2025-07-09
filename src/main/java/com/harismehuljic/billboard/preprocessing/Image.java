@@ -36,15 +36,42 @@ public abstract class Image {
 
         this.width = resizedImage.getWidth();
         this.height = resizedImage.getHeight();
-        this.pixelData = new ImagePixel[resizedImage.getHeight()][resizedImage.getWidth()];
+        this.pixelData = new ImagePixel[this.height][this.width];
         this.processImage(resizedImage);
     }
 
     /**
+     * Constructor that initializes the image with another Image instance.
+     * @param image The Image to be processed.
+     */
+    protected Image(Image image) {
+        this.width = image.getWidth();
+        this.height = image.getHeight();
+        this.pixelData = new ImagePixel[this.height][this.width];
+        this.processImage(image);
+    }
+
+    /**
      * Abstract method to process the image and extract pixel data.
+     * @param image The Image to be processed.
+     */
+    public abstract void processImage(ColorExtractable image);
+
+    /**
+     * Processes the image by extracting pixel data from a BufferedImage.
      * @param image The BufferedImage to be processed.
      */
-    public abstract void processImage(BufferedImage image);
+    public void processImage(BufferedImage image) {
+        processImage(image::getRGB);
+    }
+
+    /**
+     * Processes the image by extracting pixel data from another Image instance.
+     * @param image The Image to be processed.
+     */
+    public void processImage(Image image) {
+        processImage((x, y) -> image.getPixel(x, y).getColor().getRGB());
+    }
 
     /**
      * Returns the pixel data of the image at the specified coordinates.

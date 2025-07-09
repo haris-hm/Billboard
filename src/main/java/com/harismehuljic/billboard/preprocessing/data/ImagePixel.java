@@ -51,6 +51,19 @@ public class ImagePixel {
     }
 
     /**
+     * Sets the color of this pixel to the specified {@link Color} object.
+     *
+     * @param color The {@link Color} object to set the pixel's color to.
+     *
+     * @apiNote This method resets the pixel connections, as the color change may affect the connections. The image will
+     * have to be reprocessed to update the connections accordingly.
+     */
+    public void setColor(Color color) {
+        this.pixelConnections = new PixelConnections();
+        this.color.setColor(color);
+    }
+
+    /**
      * Returns the RGB value of the pixel.
      *
      * @return The RGB value of the pixel as an integer.

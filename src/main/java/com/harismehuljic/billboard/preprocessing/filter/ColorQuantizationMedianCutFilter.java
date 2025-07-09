@@ -1,7 +1,8 @@
 package com.harismehuljic.billboard.preprocessing.filter;
 
-import com.harismehuljic.billboard.Billboard;
 import com.harismehuljic.billboard.preprocessing.Image;
+import com.harismehuljic.billboard.preprocessing.RawImage;
+import com.harismehuljic.billboard.preprocessing.RunLengthEncodedImage;
 import com.harismehuljic.billboard.preprocessing.data.Color;
 import com.harismehuljic.billboard.preprocessing.data.ColorChannel;
 import com.harismehuljic.billboard.preprocessing.data.ImagePixel;
@@ -27,7 +28,25 @@ public class ColorQuantizationMedianCutFilter extends Filter {
         ImagePixel[] pixelData = this.image.getFlattenedPixelData();
         Color[] colorPalette = getQuantizedColorPalette(pixelData, this.colors);
 
-        return this.image;
+        for (int y = 0; y < this.image.getHeight(); y++) {
+            for (int x = 0; x < this.image.getWidth(); x++) {
+                ImagePixel pixel = this.image.getPixel(x, y);
+                Color closestColor = Arrays.stream(colorPalette)
+                        .min(Comparator.comparingInt(c -> c.getDistance(pixel.getColor())))
+                        .orElseThrow();
+                pixel.setColor(closestColor);
+            }
+        }
+
+        Image quantizedImage;
+
+        if (this.image instanceof RunLengthEncodedImage) {
+            quantizedImage = new RunLengthEncodedImage(this.image);
+        } else {
+            quantizedImage = new RawImage(this.image);
+        }
+
+        return quantizedImage;
     }
 
     private Color[] getQuantizedColorPalette(ImagePixel[] pixelData, int maxDepth) {

@@ -35,6 +35,14 @@ public class RunLengthEncodedImage extends Image {
     }
 
     /**
+     * Constructs a RunLengthEncodedImage from another Image instance.
+     * @param image The Image to be processed.
+     */
+    public RunLengthEncodedImage(Image image) {
+        super(image);
+    }
+
+    /**
      * Processes the image by applying run-length encoding to the pixel data.
      * @param image The BufferedImage to be processed.
      *
@@ -42,12 +50,12 @@ public class RunLengthEncodedImage extends Image {
      * can be easily identified.
      */
     @Override
-    public void processImage(BufferedImage image) {
+    public void processImage(ColorExtractable image) {
         for (int y = 0; y < this.height; y++) {
-            ImagePixel lastPixel = new ImagePixel(image.getRGB(0, y));
+            ImagePixel lastPixel = new ImagePixel(image.getColor(0, y));
 
             for (int x = 0; x < this.width; x++) {
-                int pixelColor = image.getRGB(x, y);
+                int pixelColor = image.getColor(x, y);
                 ImagePixel currentPixel = new ImagePixel(pixelColor);
 
                 if (x > 0 && pixelColor == lastPixel.getColor().getRGB()) {

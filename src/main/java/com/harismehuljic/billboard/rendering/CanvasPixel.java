@@ -67,9 +67,9 @@ public class CanvasPixel {
      *              of the text and the background of the pixelText in the Minecraft world.
      */
     private void updateColor(Color color) {
-        int rgb = Math.abs(color);
+        int rgb = Math.abs(color.getRGB());
         MutableText pixelText = Text.literal("█");
-        pixelText.setStyle(Style.EMPTY.withColor(TextColor.fromRgb(color)));
+        pixelText.setStyle(Style.EMPTY.withColor(TextColor.fromRgb(color.getRGB())));
 
         this.pixelEntity.setBackground(rgb);
         this.pixelEntity.setText(pixelText);

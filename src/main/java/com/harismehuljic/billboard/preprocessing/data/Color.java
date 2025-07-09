@@ -7,7 +7,7 @@ package com.harismehuljic.billboard.preprocessing.data;
  * and blue channel values respectively.</p>
  */
 public class Color {
-    public final int rgb;
+    public int rgb;
 
     /**
      * Constructs a Color object with the specified RGB value.
@@ -32,6 +32,24 @@ public class Color {
         }
 
         this.rgb = (red << 16) | (green << 8) | blue;
+    }
+
+    /**
+     * Sets the color of this Color object to the color of the specified Color object.
+     *
+     * @param color The Color object to copy the color from.
+     */
+    public void setColor(Color color) {
+        this.rgb = color.rgb;
+    }
+
+    /**
+     * Sets the color of this Color object to the specified RGB value.
+     *
+     * @param rgb The RGB value to set the color to, as an integer.
+     */
+    public void setColor(int rgb) {
+        this.rgb = rgb;
     }
 
     /**

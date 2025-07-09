@@ -35,6 +35,15 @@ public class RawImage extends Image {
     }
 
     /**
+     * Constructs a RawImage from another Image instance.
+     *
+     * @param image The Image to be processed.
+     */
+    public RawImage(Image image) {
+        super(image);
+    }
+
+    /**
      * Processes the image by copying pixel data from the BufferedImage.
      *
      * @param image The BufferedImage to be processed.
@@ -42,10 +51,10 @@ public class RawImage extends Image {
      * @implNote This method iterates through each pixel of the image and creates an {@link ImagePixel} object
      */
     @Override
-    public void processImage(BufferedImage image) {
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int rgb = image.getRGB(x, y);
+    public void processImage(ColorExtractable image) {
+        for (int y = 0; y < this.getHeight(); y++) {
+            for (int x = 0; x < this.getWidth(); x++) {
+                int rgb = image.getColor(x, y);
                 pixelData[y][x] = new ImagePixel(rgb);
             }
         }

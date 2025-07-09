@@ -1,7 +1,9 @@
 package com.harismehuljic.billboard.command;
 
 import com.harismehuljic.billboard.impl.CanvasServer;
+import com.harismehuljic.billboard.preprocessing.Image;
 import com.harismehuljic.billboard.preprocessing.RawImage;
+import com.harismehuljic.billboard.preprocessing.RunLengthEncodedImage;
 import com.harismehuljic.billboard.preprocessing.data.Color;
 import com.harismehuljic.billboard.preprocessing.data.ImageTypes;
 import com.harismehuljic.billboard.preprocessing.filter.ColorQuantizationMedianCutFilter;
@@ -91,9 +93,13 @@ public class BillboardCommand {
                 )
 
                 .then(literal("quantize")
-                    .then(CommandManager.argument("colors", IntegerArgumentType.integer(1, 256))
-                        .then(CommandManager.argument("url", StringArgumentType.greedyString())
-                                .executes(BillboardCommand::quantizeImage)
+                    .then(CommandManager.argument("colors", IntegerArgumentType.integer(1, 10))
+                        .then(CommandManager.argument("resizeFactor", FloatArgumentType.floatArg(0.001F))
+                            .then(CommandManager.argument("scale", FloatArgumentType.floatArg(0.0000001F))
+                                .then(CommandManager.argument("url", StringArgumentType.greedyString())
+                                        .executes(BillboardCommand::quantizeImage)
+                                )
+                            )
                         )
                     )
                 )
@@ -243,6 +249,8 @@ public class BillboardCommand {
         World world = Objects.requireNonNull(context.getSource().getWorld());
 
         final int colors = IntegerArgumentType.getInteger(context, "colors");
+        final float resizeFactor = FloatArgumentType.getFloat(context, "resizeFactor");
+        final float scale = FloatArgumentType.getFloat(context, "scale");
         final String url = StringArgumentType.getString(context, "url");
 
         assert player != null;
@@ -254,10 +262,21 @@ public class BillboardCommand {
                     return null;
                 }
 
-                RawImage rawImage = new RawImage(image);
-                ColorQuantizationMedianCutFilter quantizedFilter = new ColorQuantizationMedianCutFilter(rawImage, colors);
-                quantizedFilter.apply();
+                int width = (int) Math.floor(image.getWidth() * resizeFactor);
+                int height = (int) Math.floor(image.getHeight() * resizeFactor);
 
+                RunLengthEncodedImage rawImage = new RunLengthEncodedImage(image, width, height);
+                Image quantizedFilter = new ColorQuantizationMedianCutFilter(rawImage, colors).apply();
+
+                Canvas canvas = new CanvasBuilder()
+                        .setPixelScale(scale)
+                        .setWidth(width)
+                        .setHeight(height)
+                        .setPos(player.getPos())
+                        .setWorld(world)
+                        .setImage(quantizedFilter)
+                        .build();
+                canvas.render();
                 return null;
             }, source.getServer());
             return 0;
