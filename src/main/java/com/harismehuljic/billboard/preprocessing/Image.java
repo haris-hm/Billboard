@@ -3,6 +3,7 @@ package com.harismehuljic.billboard.preprocessing;
 import com.harismehuljic.billboard.preprocessing.data.ImagePixel;
 
 import java.awt.image.BufferedImage;
+import java.util.stream.Stream;
 
 /**
  * Abstract class representing an image that can be processed to extract pixel data.
@@ -17,7 +18,7 @@ public abstract class Image {
      * Constructor that initializes the image with the given BufferedImage.
      * @param image The BufferedImage to be processed.
      */
-    public Image(BufferedImage image) {
+    protected Image(BufferedImage image) {
         this.width = image.getWidth();
         this.height = image.getHeight();
         this.pixelData = new ImagePixel[image.getHeight()][image.getWidth()];
@@ -30,7 +31,7 @@ public abstract class Image {
      * @param width The desired width of the resized image.
      * @param height The desired height of the resized image.
      */
-    public Image(BufferedImage image, int width, int height) {
+    protected Image(BufferedImage image, int width, int height) {
         BufferedImage resizedImage = resizeImage(image, width, height);
 
         this.width = resizedImage.getWidth();
@@ -91,6 +92,14 @@ public abstract class Image {
      */
     public int getHeight() {
         return this.height;
+    }
+
+    /**
+     * Returns a flattened array of all pixel data in the image.
+     * @return An array of ImagePixel objects containing all pixel data.
+     */
+    public ImagePixel[] getFlattenedPixelData() {
+        return Stream.of(this.pixelData).flatMap(Stream::of).toArray(ImagePixel[]::new);
     }
 
     /**

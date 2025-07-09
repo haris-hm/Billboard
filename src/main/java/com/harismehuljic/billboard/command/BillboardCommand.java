@@ -1,7 +1,9 @@
 package com.harismehuljic.billboard.command;
 
 import com.harismehuljic.billboard.impl.CanvasServer;
+import com.harismehuljic.billboard.preprocessing.RawImage;
 import com.harismehuljic.billboard.preprocessing.data.ImageTypes;
+import com.harismehuljic.billboard.preprocessing.filter.MedianCutColorQuantizedFilter;
 import com.harismehuljic.billboard.preprocessing.util.ImageRequester;
 import com.harismehuljic.billboard.rendering.Canvas;
 import com.harismehuljic.billboard.rendering.CanvasBuilder;
@@ -85,6 +87,14 @@ public class BillboardCommand {
                                     )
                             )
                         )
+                )
+
+                .then(literal("quantize")
+                    .then(CommandManager.argument("colors", IntegerArgumentType.integer(1, 256))
+                        .then(CommandManager.argument("url", StringArgumentType.greedyString())
+                                .executes(BillboardCommand::quantizeImage)
+                        )
+                    )
                 )
 
                 .then(literal("remove")
@@ -219,6 +229,34 @@ public class BillboardCommand {
                         .setImage(image, type, resizeFactor)
                         .build();
                 canvas.render();
+                return null;
+            }, source.getServer());
+            return 0;
+        }, source.getServer());
+        return 1;
+    }
+
+    private static int quantizeImage(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = context.getSource().getPlayer();
+        World world = Objects.requireNonNull(context.getSource().getWorld());
+
+        final int colors = IntegerArgumentType.getInteger(context, "colors");
+        final String url = StringArgumentType.getString(context, "url");
+
+        assert player != null;
+
+        ImageRequester.getImage(url).orTimeout(60, TimeUnit.SECONDS).handleAsync((image, ex) -> {
+            CompletableFuture.supplyAsync(() -> {
+                if (ex != null) {
+                    source.sendError(Text.literal("Failed to load image: " + ex.getMessage()));
+                    return null;
+                }
+
+                RawImage rawImage = new RawImage(image);
+                MedianCutColorQuantizedFilter quantizedFilter = new MedianCutColorQuantizedFilter(rawImage, colors);
+                quantizedFilter.apply();
+
                 return null;
             }, source.getServer());
             return 0;
